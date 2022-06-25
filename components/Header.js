@@ -1,6 +1,7 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import Link from "next/Link"
 import { useRouter } from 'next/router'
+import * as Realm from "realm-web"
 import {
     ShoppingCartIcon,
     MenuIcon,
@@ -13,14 +14,48 @@ function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("")
+  const [autoComplete, setAutoComplete] = useState([])
+
+  useEffect(() => {
+    const asyncEffect = async () => {
+        if (searchTerm.length) {
+            console.log(">> fetch autocomplete list")
+            // add your Realm App Id to the .env.local file
+            const REALM_APP_ID = process.env.NEXT_PUBLIC_REALM_APP_ID;
+            const app = new Realm.App({ id: REALM_APP_ID });
+            const credentials = Realm.Credentials.anonymous();
+            try {
+                const user = await app.logIn(credentials);
+                const searchAutoComplete = await user.functions.searchAutoComplete(
+                    searchTerm
+                );
+                setAutoComplete(searchAutoComplete);
+            } catch (error) {
+                console.error(error);
+            }
+        } else {
+            setAutoComplete([]);
+        }
+    }
+
+    asyncEffect()
+  }, [searchTerm]);
 
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    setSearchTerm("")
     router.push({
         pathname: `/search/${searchTerm}`
     })
+    setSearchTerm("")
+  }
+
+  const handleSelect = (id) => {
+    console.log(`handleSelect: ${id}`)
+    router.push({
+        pathname: `/products/${id}`
+    })
+    setSearchTerm("")
   }
 
   return (
@@ -94,13 +129,28 @@ function Header() {
 
             <form onSubmit={handleSubmit}>
                 <input
-                className="w-full border rounded-md pl-10 pr-4 py-2 focus:border-green-500 focus:outline-none focus:shadow-outline"
-                type="text"
-                placeholder="Search"
-                onChange={(e) => setSearchTerm(e.target.value)}
-                value = {searchTerm}
+                    className="w-full border rounded-md pl-10 pr-4 py-2 focus:border-green-500 focus:outline-none focus:shadow-outline"
+                    type="text"
+                    placeholder="Search"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value = {searchTerm}
                 />
             </form>
+            {autoComplete.length >0 && (
+              <ul className="absolute inset-x-0 top-full bg-green-200 border border-green-500 rounded-md z-20">
+                {autoComplete.map((item) => {
+                  return (
+                    <li
+                      key={item._id}
+                      className="px-4 py-2 hover:bg-green-300 cursor-pointer"
+                      onClick={() => handleSelect(item._id)}
+                    >
+                      {item.name}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       </header>
