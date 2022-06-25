@@ -1,5 +1,6 @@
 import React, {useState} from 'react'
 import Link from "next/Link"
+import { useRouter } from 'next/router'
 import {
     ShoppingCartIcon,
     MenuIcon,
@@ -8,8 +9,19 @@ import {
 import Cart from "./Cart"
 
 function Header() {
+  const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+
+    setSearchTerm("")
+    router.push({
+        pathname: `/search/${searchTerm}`
+    })
+  }
 
   return (
     <>
@@ -80,11 +92,15 @@ function Header() {
               <SearchIcon className="h-5 w-5" />
             </span>
 
-            <input
-              className="w-full border rounded-md pl-10 pr-4 py-2 focus:border-green-500 focus:outline-none focus:shadow-outline"
-              type="text"
-              placeholder="Search"
-            />
+            <form onSubmit={handleSubmit}>
+                <input
+                className="w-full border rounded-md pl-10 pr-4 py-2 focus:border-green-500 focus:outline-none focus:shadow-outline"
+                type="text"
+                placeholder="Search"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                value = {searchTerm}
+                />
+            </form>
           </div>
         </div>
       </header>
